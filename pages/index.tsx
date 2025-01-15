@@ -8,10 +8,10 @@ import {
 import { BiEnvelope } from "react-icons/bi";
 import { GoHomeFill } from "react-icons/go";
 import localFont from "next/font/local";
-import React from "react";
+import React, { useCallback } from "react";
 import { FaCircleNodes } from "react-icons/fa6";
 import FeedCard from "@/components/FeedCard";
-import { GoogleLogin } from "@react-oauth/google";
+import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 
 const firaCode = localFont({
   src: "./fonts/FiraCodeTTF.ttf",
@@ -63,6 +63,11 @@ const sidebarMenuItems: twitterSidebarButton[] = [
 ];
 
 export default function Home() {
+
+  const handleLoginWithGoogle = useCallback((cred: CredentialResponse) => {
+
+  }, [])
+
   return (
     <div className={firaCode.className}>
       <div className="grid grid-cols-17 divide-x-[1px] divide-neutral-700 h-screen w-screen px-52">
