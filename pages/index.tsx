@@ -12,6 +12,9 @@ import React, { useCallback } from "react";
 import { FaCircleNodes } from "react-icons/fa6";
 import FeedCard from "@/components/FeedCard";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
+import { graphqlClient } from "@/clients/api";
+import { verifyUserGoogleTokenQuery } from "@/graphql/query/user";
 
 const firaCode = localFont({
   src: "./fonts/FiraCodeTTF.ttf",
@@ -63,10 +66,23 @@ const sidebarMenuItems: twitterSidebarButton[] = [
 ];
 
 export default function Home() {
+  const handleLoginWithGoogle = useCallback(
+    async (cred: CredentialResponse) => {
+      const googleToken = cred.credential;
+      if (!googleToken) return toast.error("Google token not available");
 
-  const handleLoginWithGoogle = useCallback((cred: CredentialResponse) => {
+      const { verifyGoogleToken } = await graphqlClient.request(
+        verifyUserGoogleTokenQuery,
+        { token: googleToken }
+      );
 
-  }, [])
+      toast.success('Verified Success')
+      console.log(verifyGoogleToken);
+
+      if(verifyGoogleToken) window.localStorage.setItem('__vertex_token', verifyGoogleToken);
+    },
+    []
+  );
 
   return (
     <div className={firaCode.className}>
@@ -113,7 +129,7 @@ export default function Home() {
               Register
             </div>
             <div className="pt-3">
-              <GoogleLogin onSuccess={(cred) => console.log(cred.credential)} />
+              <GoogleLogin onSuccess={handleLoginWithGoogle} />
             </div>
           </div>
         </div>
