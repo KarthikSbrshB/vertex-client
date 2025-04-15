@@ -8,13 +8,15 @@ import {
 import { BiEnvelope } from "react-icons/bi";
 import { GoHomeFill } from "react-icons/go";
 import localFont from "next/font/local";
-import React, { useCallback } from "react";
+import React, { use, useCallback } from "react";
 import { FaCircleNodes } from "react-icons/fa6";
 import FeedCard from "@/components/FeedCard";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
-import { graphqlClient } from "@/clients/api";
-import { verifyUserGoogleTokenQuery } from "@/graphql/query/user";
+import { getGraphqlClient } from "@/clients/api";
+import { getCurrentUserQuery, verifyUserGoogleTokenQuery } from "@/graphql/query/user";
+import { useCurrentUser } from "@/hooks/user";
+import { useQueryClient } from "@tanstack/react-query";
 
 const firaCode = localFont({
   src: "./fonts/FiraCodeTTF.ttf",
@@ -66,22 +68,36 @@ const sidebarMenuItems: twitterSidebarButton[] = [
 ];
 
 export default function Home() {
+  const { user } = useCurrentUser();
+  const queryClient = useQueryClient();
+
+  console.log(user);
+
   const handleLoginWithGoogle = useCallback(
     async (cred: CredentialResponse) => {
       const googleToken = cred.credential;
-      if (!googleToken) return toast.error("Google token not available");
+      if (!googleToken) return toast.error(`Google token not available`);
 
-      const { verifyGoogleToken } = await graphqlClient.request(
+      // const { verifyGoogleToken } = await graphqlClient.request(
+      //   verifyUserGoogleTokenQuery,
+      //   { token: googleToken }
+      // );
+
+      const { verifyGoogleToken } = await getGraphqlClient().request(
         verifyUserGoogleTokenQuery,
         { token: googleToken }
       );
 
-      toast.success('Verified Success')
+      toast.success("Verified Success");
       console.log(verifyGoogleToken);
 
-      if(verifyGoogleToken) window.localStorage.setItem('__vertex_token', verifyGoogleToken);
+      if (verifyGoogleToken)
+        window.localStorage.setItem("__vertex_token", verifyGoogleToken);
+
+      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      // window.location.reload();
     },
-    []
+    [queryClient]
   );
 
   return (
@@ -123,15 +139,17 @@ export default function Home() {
           <FeedCard />
         </div>
         <div className="col-span-5 p-5">
-          <div className="flex flex-col items-center justify-center p-5 bg-sky-600 bg-opacity-15 border border-cyan-300 text-xl tracking-tight font-medium rounded-md">
-            <div>New User?</div>
-            <div className="font-medium text-sm text-cyan-700 pt-1">
-              Register
+          {!user && (
+            <div className="flex flex-col items-center justify-center p-5 bg-sky-600 bg-opacity-15 border border-cyan-300 text-xl tracking-tight font-medium rounded-md">
+              <div>New User?</div>
+              <div className="font-medium text-sm text-cyan-700 pt-1">
+                Register
+              </div>
+              <div className="pt-3">
+                <GoogleLogin onSuccess={handleLoginWithGoogle} />
+              </div>
             </div>
-            <div className="pt-3">
-              <GoogleLogin onSuccess={handleLoginWithGoogle} />
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
